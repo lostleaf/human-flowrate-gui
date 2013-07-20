@@ -22,7 +22,7 @@ function varargout = untitled3(varargin)
 
 % Edit the above text to modify the response to help untitled3
 
-% Last Modified by GUIDE v2.5 15-Jul-2013 11:57:32
+% Last Modified by GUIDE v2.5 20-Jul-2013 20:43:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -80,15 +80,100 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 [fileName,pathName] = uigetfile('*.avi','Select an avi file');
 location = [pathName, fileName];
-disp(location);
+%disp(location);
 
+pb3 = handles.pushbutton3;
+axes2 = handles.axes2;
 m = mmreader(location);
-numFrame = m.NumberOfFrames;
-frames = read(m);
 
-for k = 1 : numFrame
-    mov(k).cdata = frames(:, :, :, k);
-    mov(k).colormap = [];
+set(pb3, 'enable', 'on');
+setappdata(pb3, 'pause', 0);
+setappdata(axes2, 'index', 1);
+setappdata(axes2, 'numFrame', m.NumberOfFrames);
+setappdata(axes2, 'frames', read(m));
+
+play(handles);
+
+guidata(hObject, handles);
+%movie(handles.axes2, mov, 1, 30, [0 0 500 500]);
+
+
+% --- Executes on button press in pushbutton3.
+function pushbutton3_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if getappdata(hObject, 'pause') == 0
+    set (hObject, 'String', 'Continue');
+    setappdata(hObject, 'pause', 1);
+else
+    set (hObject, 'String', 'Pause');
+    setappdata(hObject, 'pause', 0);
+    play(handles);
 end
 
-movie(handles.axes2, mov);
+function play(handles)
+
+axes2 = handles.axes2;
+axes(axes2);
+
+index = getappdata(axes2, 'index');
+numFrame = getappdata(axes2, 'numFrame');
+frames = getappdata(axes2, 'frames');
+pb3 = handles.pushbutton3;
+
+for k = index : numFrame
+    if getappdata(pb3, 'pause') == 0
+        %v = get(handles.slider1, 'Value');
+        set(handles.slider1, 'Value', k / numFrame);
+        setappdata(axes2, 'index', k);
+        imshow(frames(:, :, :, k));
+        pause(0.05);
+    else
+        break;
+    end
+end
+
+
+% --- Executes on slider movement.
+function slider1_Callback(hObject, eventdata, handles)
+% hObject    handle to slider1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+value = get(hObject, 'Value');
+disp(eventdata);
+numFrame = getappdata(handles.axes2, 'numFrame');
+
+flag = 0;
+if getappdata(handles.pushbutton3, 'pause') == 0 
+    pushbutton3_Callback(handles.pushbutton3, 0, handles);
+    flag = 1;
+end
+
+%pause(1);
+
+disp(getappdata(handles.axes2, 'index'));
+setappdata(handles.axes2, 'index', round(value * numFrame));
+disp(getappdata(handles.axes2, 'index'));
+
+
+if flag == 1
+    pushbutton3_Callback(handles.pushbutton3, 0, handles);
+end
+%setappdata(handles.pushbutton3, 'pause', 0);
+play(handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function slider1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
